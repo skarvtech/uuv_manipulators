@@ -34,15 +34,13 @@ class JointVelocityController:
         self._reference_pos = dict()
         # Output command topics
         self._command_topics = dict()
-        # Axes mapping
-        self._axes = dict()
         # Axes gain values
         self._axes_gain = dict()
 
         # Last command update timestamp
         self._last_cmd_update = rospy.get_time()
         # Velocity command topic subscriber
-        self._cmd_sub = rospy.Subscriber('twist', Twist, self._cmd_callback)
+        self._cmd_sub = rospy.Subscriber('cmd_vel', Twist, self._cmd_callback)
 
         # Reading the controller configuration
         controller_config = rospy.get_param('~controller_config')
@@ -60,7 +58,6 @@ class JointVelocityController:
                             controller_config[tag]['topic'],
                             Float64,
                             queue_size=1)
-                        self._axes[joint] = controller_config[tag]['joint_input_axis']
                         self._axes_gain[joint] = controller_config[tag]['axis_gain']
 
                         # Setting the starting reference to the home position
@@ -94,13 +91,13 @@ class JointVelocityController:
             for joint in self._arm_interface.joint_names:
                 if joint == 'oberon4/azimuth':
                     self._reference_pos[joint] += self._axes_gain[joint] * \
-                        cmd.linear.x
+                        cmd.angular.z
                 if joint == 'oberon4/shoulder':
                     self._reference_pos[joint] += self._axes_gain[joint] * \
-                        cmd.linear.y
+                        cmd.linear.x
                 if joint == 'oberon4/wrist_joint':
                     self._reference_pos[joint] += self._axes_gain[joint] * \
-                        cmd.angular.z
+                        cmd.linear.y
                 # Check for the joint limits
                 self._reference_pos[joint] = self._check_joint_limits(self._reference_pos[joint], joint)
             self._last_cmd_update = rospy.get_time()
